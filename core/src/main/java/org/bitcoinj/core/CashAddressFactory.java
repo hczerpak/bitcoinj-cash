@@ -85,7 +85,7 @@ public class CashAddressFactory {
      * @param addr
      *            The textual form of the address, such as "bitcoincash:qpk4hk3wuxe2uqtqc97n8atzrrr6r5mleczf9sur4h".
      * @throws AddressFormatException
-     *             if the given base58 doesn't parse or the checksum is invalid
+     *             if the given cash address doesn't parse or the checksum is invalid
      * @throws WrongNetworkException
      *             if the given address is valid but for a different chain (eg testnet vs mainnet)
      */

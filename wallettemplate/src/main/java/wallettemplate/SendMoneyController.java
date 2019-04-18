@@ -63,10 +63,9 @@ public class SendMoneyController {
     }
 
     public void send(ActionEvent event) {
-        // Address exception cannot happen as we validated it beforehand.
         try {
             Coin amount = Coin.parseCoin(amountEdit.getText());
-            Address destination = Address.fromBase58(Main.params, address.getText());
+            Address destination = Address.fromAddressString(Main.params, address.getText());
             SendRequest req;
             if (amount.equals(Main.bitcoin.wallet().getBalance()))
                 req = SendRequest.emptyWallet(destination);

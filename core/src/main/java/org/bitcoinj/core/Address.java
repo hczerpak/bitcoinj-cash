@@ -52,6 +52,24 @@ public class Address extends VersionedChecksummedBytes {
 
     private transient NetworkParameters params;
 
+    public enum CashAddressType {
+        Unknown(-1),
+        PubKey(0),
+        Script(1);
+
+        private int value;
+
+        CashAddressType(int value) {
+            this.value = value;
+        }
+
+        byte getValue() {
+            return (byte) value;
+        }
+    }
+
+    protected CashAddressType cashAddressType;
+
     /**
      * Construct an address from parameters, the address version, and the hash160 form. Example:<p>
      *
@@ -63,6 +81,9 @@ public class Address extends VersionedChecksummedBytes {
         checkArgument(hash160.length == 20, "Addresses are 160-bit hashes, so you must provide 20 bytes");
         if (!isAcceptableVersion(params, version))
             throw new WrongNetworkException(version, params.getAcceptableAddressCodes());
+
+        this.cashAddressType = getType(params, version);
+
         this.params = params;
     }
 
@@ -97,6 +118,73 @@ public class Address extends VersionedChecksummedBytes {
     }
 
     /**
+     * Construct an address from its Cash Address representation.
+     * @param params
+     *            The expected NetworkParameters or null if you don't want validation.
+     * @param cashAddress
+     *            The textual form of the address, such as "bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a".
+     * @throws AddressFormatException
+     *             if the given cash address doesn't parse or the checksum is invalid
+     * @throws WrongNetworkException
+     *             if the given address is valid but for a different chain (eg testnet vs mainnet)
+     */
+    public static Address fromCashAddress(@Nullable NetworkParameters params, String cashAddress) throws AddressFormatException {
+        CashAddressFactory addrFactory = CashAddressFactory.create();
+        return addrFactory.getFromFormattedAddress(params, cashAddress);
+    }
+
+    /**
+     * Construct an address from either Cash Address or Base58 representation
+     * @param params
+     *            The expected NetworkParameters or null if you don't want validation.
+     * @param address
+     *            The textual form of the address, such as "bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a"
+     *            or "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL".
+     * @throws AddressFormatException
+     *            if the given cash address doesn't parse or the checksum is invalid
+     * @throws WrongNetworkException
+     *             if the given address is valid but for a different chain (eg testnet vs mainnet)
+     */
+    public static Address fromAddressString(@Nullable NetworkParameters params, String address) throws AddressFormatException {
+        Address decoded;
+        try {
+            decoded = Address.fromCashAddress(params, address);
+            return decoded;
+        } catch (AddressFormatException e) {
+            // ignore; try to decode as base58 address
+        }
+        decoded = Address.fromBase58(params, address);
+        return decoded;
+    }
+
+    @Override
+    public String toString() {
+        if (cashAddressType != null && cashAddressType != CashAddressType.Unknown)
+            return CashAddressHelper.encodeCashAddress(getParameters().getCashAddrPrefix(),
+                    CashAddressHelper.packAddressData(getHash160(), cashAddressType.getValue()));
+        return "";
+    }
+
+    static CashAddressType getType(NetworkParameters params, int version) {
+        if (version == params.getAddressHeader()) {
+            return CashAddressType.PubKey;
+        } else if (version == params.getP2SHHeader()) {
+            return CashAddressType.Script;
+        }
+        return CashAddressType.Unknown;
+    }
+
+    static int getLegacyVersion(NetworkParameters params, CashAddressType type) {
+        switch (type) {
+            case PubKey:
+                return params.getAddressHeader();
+            case Script:
+                return params.getP2SHHeader();
+        }
+        throw new AddressFormatException("Invalid Cash address type: " + type.value);
+    }
+
+    /**
      * Construct an address from parameters and the hash160 form. Example:<p>
      *
      * <pre>new Address(MainNetParams.get(), Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));</pre>
@@ -104,6 +192,7 @@ public class Address extends VersionedChecksummedBytes {
     public Address(NetworkParameters params, byte[] hash160) {
         super(params.getAddressHeader(), hash160);
         checkArgument(hash160.length == 20, "Addresses are 160-bit hashes, so you must provide 20 bytes");
+        this.cashAddressType = CashAddressType.PubKey;
         this.params = params;
     }
 
@@ -115,6 +204,8 @@ public class Address extends VersionedChecksummedBytes {
             if (!isAcceptableVersion(params, version)) {
                 throw new WrongNetworkException(version, params.getAcceptableAddressCodes());
             }
+
+            this.cashAddressType = getType(params, version);
             this.params = params;
         } else {
             NetworkParameters paramsFound = null;
@@ -127,6 +218,7 @@ public class Address extends VersionedChecksummedBytes {
             if (paramsFound == null)
                 throw new AddressFormatException("No network found for " + address);
 
+            this.cashAddressType = getType(paramsFound, version);
             this.params = paramsFound;
         }
     }
@@ -168,8 +260,16 @@ public class Address extends VersionedChecksummedBytes {
         try {
             return Address.fromBase58(null, address).getParameters();
         } catch (WrongNetworkException e) {
+            // Cannot happen.
+        } catch (AddressFormatException e) {
+            // ignore; attempt to decode as cash address
+        }
+        try {
+            return Address.fromCashAddress(null, address).getParameters();
+        } catch (WrongNetworkException e) {
             throw new RuntimeException(e);  // Cannot happen.
         }
+        // re-throw AddressFormatException if CashAddress decode failed
     }
 
     /**
