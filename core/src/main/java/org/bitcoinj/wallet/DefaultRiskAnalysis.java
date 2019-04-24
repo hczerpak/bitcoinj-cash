@@ -87,6 +87,13 @@ public class DefaultRiskAnalysis implements RiskAnalysis {
         if (tx.getConfidence().getSource() == TransactionConfidence.Source.SELF)
             return Result.OK;
 
+        // Relative time-locked transactions are risky too. We can't check the locks because usually we don't know the
+        // spent outputs (to know when they were created).
+        if (tx.hasRelativeLockTime()) {
+            nonFinal = tx;
+            return Result.NON_FINAL;
+        }
+
         if (wallet == null)
             return null;
 
@@ -112,7 +119,7 @@ public class DefaultRiskAnalysis implements RiskAnalysis {
 
     /**
      * The reason a transaction is considered non-standard, returned by
-     * {@link #isStandard(org.bitcoinj.core.Transaction)}.
+     * {@link #isStandard(Transaction)}.
      */
     public enum RuleViolation {
         NONE,

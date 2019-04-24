@@ -18,12 +18,13 @@
 package org.bitcoinj.script;
 
 import org.bitcoinj.core.Utils;
-import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkState;
 import static org.bitcoinj.script.ScriptOpCodes.*;
@@ -138,6 +139,17 @@ public class ScriptChunk {
         }
     }
 
+    public byte[] toByteArray() {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        try {
+            write(stream);
+        } catch (IOException e) {
+            // Should not happen as ByteArrayOutputStream does not throw IOException on write
+            throw new RuntimeException(e);
+        }
+        return stream.toByteArray();
+    }
+
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder();
@@ -164,6 +176,6 @@ public class ScriptChunk {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(opcode, startLocationInProgram, Arrays.hashCode(data));
+        return Objects.hash(opcode, startLocationInProgram, Arrays.hashCode(data));
     }
 }

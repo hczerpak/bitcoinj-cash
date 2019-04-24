@@ -1,4 +1,6 @@
 /*
+ * Copyright by the original author or authors.
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,6 +19,7 @@ package org.bitcoinj.examples;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.bitcoinj.core.*;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.params.TestNet3Params;
@@ -78,7 +81,7 @@ public class SendRequest {
                     System.out.println("something went wrong");
                 }
             };
-            Futures.addCallback(balanceFuture, callback);
+            Futures.addCallback(balanceFuture, callback, MoreExecutors.directExecutor());
         }
 
         // shutting down 

@@ -17,10 +17,11 @@
 
 package org.bitcoinj.core;
 
-import com.google.common.base.Objects;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * <p>A message sent by nodes when a message we sent was rejected (ie a transaction had too little fee/was invalid/etc).</p>
@@ -97,11 +98,11 @@ public class RejectMessage extends Message {
 
     @Override
     public void bitcoinSerializeToStream(OutputStream stream) throws IOException {
-        byte[] messageBytes = message.getBytes("UTF-8");
+        byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
         stream.write(new VarInt(messageBytes.length).encode());
         stream.write(messageBytes);
         stream.write(code.code);
-        byte[] reasonBytes = reason.getBytes("UTF-8");
+        byte[] reasonBytes = reason.getBytes(StandardCharsets.UTF_8);
         stream.write(new VarInt(reasonBytes.length).encode());
         stream.write(reasonBytes);
         if ("block".equals(message) || "tx".equals(message))
@@ -163,6 +164,6 @@ public class RejectMessage extends Message {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(message, code, reason, messageHash);
+        return Objects.hash(message, code, reason, messageHash);
     }
 }

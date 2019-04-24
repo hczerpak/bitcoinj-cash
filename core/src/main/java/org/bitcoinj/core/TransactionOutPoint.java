@@ -17,12 +17,12 @@
 
 package org.bitcoinj.core;
 
-import com.google.common.base.Objects;
 import org.bitcoinj.script.*;
 import org.bitcoinj.wallet.*;
 
 import javax.annotation.*;
 import java.io.*;
+import java.util.Objects;
 
 import static com.google.common.base.Preconditions.*;
 
@@ -44,7 +44,7 @@ public class TransactionOutPoint extends ChildMessage {
     Transaction fromTx;
 
     // The connected output.
-    private TransactionOutput connectedOutput;
+    TransactionOutput connectedOutput;
 
     public TransactionOutPoint(NetworkParameters params, long index, @Nullable Transaction fromTx) {
         super(params);
@@ -129,8 +129,8 @@ public class TransactionOutPoint extends ChildMessage {
     }
 
     /**
-     * Returns the ECKey identified in the connected output, for either pay-to-address scripts or pay-to-key scripts.
-     * For P2SH scripts you can use {@link #getConnectedRedeemData(org.bitcoinj.wallet.KeyBag)} and then get the
+     * Returns the ECKey identified in the connected output, for either P2PKH, P2WPKH or P2PK scripts.
+     * For P2SH scripts you can use {@link #getConnectedRedeemData(KeyBag)} and then get the
      * key from RedeemData.
      * If the script form cannot be understood, throws ScriptException.
      *
@@ -153,7 +153,7 @@ public class TransactionOutPoint extends ChildMessage {
     }
 
     /**
-     * Returns the RedeemData identified in the connected output, for either pay-to-address scripts, pay-to-key
+     * Returns the RedeemData identified in the connected output, for either P2PKH, P2WPKH, P2PK
      * or P2SH scripts.
      * If the script forms cannot be understood, throws ScriptException.
      *
@@ -213,6 +213,6 @@ public class TransactionOutPoint extends ChildMessage {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(getIndex(), getHash());
+        return Objects.hash(getIndex(), getHash());
     }
 }

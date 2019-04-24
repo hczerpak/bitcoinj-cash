@@ -1,7 +1,6 @@
 /*
- * Copyright 2014 The bitcoinj developers.
- * Copyright 2015 Andreas Schildbach
- *
+ * Copyright by the original author or authors.
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,6 +25,7 @@ import org.bitcoinj.script.Script;
 import org.bitcoinj.utils.Threading;
 import org.bitcoinj.wallet.listeners.KeyChainEventListener;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
@@ -33,7 +33,7 @@ import com.google.common.collect.PeekingIterator;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.KeyParameter;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
@@ -49,10 +49,10 @@ import static com.google.common.collect.Lists.newLinkedList;
 /**
  * <p>A deterministic key chain is a {@link KeyChain} that uses the
  * <a href="https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki">BIP 32 standard</a>, as implemented by
- * {@link org.bitcoinj.crypto.DeterministicHierarchy}, to derive all the keys in the keychain from a master seed.
+ * {@link DeterministicHierarchy}, to derive all the keys in the keychain from a master seed.
  * This type of wallet is extremely convenient and flexible. Although backing up full wallet files is always a good
  * idea, to recover money only the root seed needs to be preserved and that is a number small enough that it can be
- * written down on paper or, when represented using a BIP 39 {@link org.bitcoinj.crypto.MnemonicCode},
+ * written down on paper or, when represented using a BIP 39 {@link MnemonicCode},
  * dictated over the phone (possibly even memorized).</p>
  *
  * <p>Deterministic key chains have other advantages: parts of the key tree can be selectively revealed to allow
@@ -62,14 +62,14 @@ import static com.google.common.collect.Lists.newLinkedList;
  * A watching wallet is not instantiated using the public part of the master key as you may imagine. Instead, you
  * need to take the account key (first child of the master key) and provide the public part of that to the watching
  * wallet instead. You can do this by calling {@link #getWatchingKey()} and then serializing it with
- * {@link org.bitcoinj.crypto.DeterministicKey#serializePubB58(org.bitcoinj.core.NetworkParameters)}. The resulting "xpub..." string encodes
+ * {@link DeterministicKey#serializePubB58(NetworkParameters)}. The resulting "xpub..." string encodes
  * sufficient information about the account key to create a watching chain via
- * {@link org.bitcoinj.crypto.DeterministicKey#deserializeB58(org.bitcoinj.crypto.DeterministicKey, String, org.bitcoinj.core.NetworkParameters)}
+ * {@link DeterministicKey#deserializeB58(DeterministicKey, String, NetworkParameters)}
  * (with null as the first parameter) and then
- * {@link DeterministicKeyChain#DeterministicKeyChain(org.bitcoinj.crypto.DeterministicKey)}.</p>
+ * {@link Builder#watch(DeterministicKey)}.</p>
  *
- * <p>This class builds on {@link org.bitcoinj.crypto.DeterministicHierarchy} and
- * {@link org.bitcoinj.crypto.DeterministicKey} by adding support for serialization to and from protobufs,
+ * <p>This class builds on {@link DeterministicHierarchy} and
+ * {@link DeterministicKey} by adding support for serialization to and from protobufs,
  * and encryption of parts of the key tree. Internally it arranges itself as per the BIP 32 spec, with the seed being
  * used to derive a master key, which is then used to derive an account key, the account key is used to derive two
  * child keys called the <i>internal</i> and <i>external</i> parent keys (for change and handing out addresses respectively)
@@ -111,6 +111,7 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
     // that feature yet. In future we might hand out different accounts for cases where we wish to hand payers
     // a payment request that can generate lots of addresses independently.
     // The account path may be overridden by subclasses.
+    // m / 0'
     public static final ImmutableList<ChildNumber> ACCOUNT_ZERO_PATH = ImmutableList.of(ChildNumber.ZERO_HARDENED);
     public static final ImmutableList<ChildNumber> EXTERNAL_SUBPATH = ImmutableList.of(ChildNumber.ZERO);
     public static final ImmutableList<ChildNumber> INTERNAL_SUBPATH = ImmutableList.of(ChildNumber.ONE);
@@ -195,7 +196,7 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
         }
 
         /**
-         * Generates a new key chain with entropy selected randomly from the given {@link java.security.SecureRandom}
+         * Generates a new key chain with entropy selected randomly from the given {@link SecureRandom}
          * object and of the requested size in bits.  The derived seed is further protected with a user selected passphrase
          * (see BIP 39).
          * @param random the random number generator - use new SecureRandom().
@@ -208,7 +209,7 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
         }
 
         /**
-         * Generates a new key chain with 128 bits of entropy selected randomly from the given {@link java.security.SecureRandom}
+         * Generates a new key chain with 128 bits of entropy selected randomly from the given {@link SecureRandom}
          * object.  The derived seed is further protected with a user selected passphrase
          * (see BIP 39).
          * @param random the random number generator - use new SecureRandom().
@@ -616,10 +617,10 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
     }
 
     /**
-     * <p>An alias for <code>getKeyByPath(getAccountPath())</code>.</p>
+     * <p>An alias for {@code getKeyByPath(getAccountPath())}.</p>
      *
      * <p>Use this when you would like to create a watching key chain that follows this one, but can't spend money from it.
-     * The returned key can be serialized and then passed into {@link #watch(org.bitcoinj.crypto.DeterministicKey)}
+     * The returned key can be serialized and then passed into {@link Builder#watch(DeterministicKey)}
      * on another system to watch the hierarchy.</p>
      *
      * <p>Note that the returned key is not pubkey only unless this key chain already is: the returned key can still

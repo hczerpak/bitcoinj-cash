@@ -1,6 +1,6 @@
 /*
- * Copyright 2013 The bitcoinj developers.
- *
+ * Copyright by the original author or authors.
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -48,7 +48,7 @@ import static com.google.common.collect.Lists.newArrayList;
  * specifies how many signatures required to spend transactions for this married keychain. This value should not exceed
  * total number of keys involved (one followed key plus number of following keys), otherwise IllegalArgumentException
  * will be thrown.</p>
- * <p>IMPORTANT: As of Bitcoin Core 0.9 all multisig transactions which require more than 3 public keys are non-standard
+ * <p>IMPORTANT: As of Bitcoin Core 0.9 all bare (non-P2SH) multisig transactions which require more than 3 public keys are non-standard
  * and such spends won't be processed by peers with default settings, essentially making such transactions almost
  * nonspendable</p>
  * <p>This method will throw an IllegalStateException, if the keychain is already married or already has leaf keys
@@ -57,7 +57,7 @@ import static com.google.common.collect.Lists.newArrayList;
 public class MarriedKeyChain extends DeterministicKeyChain {
     // The map holds P2SH redeem script and corresponding ECKeys issued by this KeyChainGroup (including lookahead)
     // mapped to redeem script hashes.
-    private LinkedHashMap<ByteString, RedeemData> marriedKeysRedeemData = new LinkedHashMap<ByteString, RedeemData>();
+    private LinkedHashMap<ByteString, RedeemData> marriedKeysRedeemData = new LinkedHashMap<>();
 
     private List<DeterministicKeyChain> followingKeyChains;
 
@@ -80,7 +80,7 @@ public class MarriedKeyChain extends DeterministicKeyChain {
         }
 
         /**
-         * Threshold, or <code>(followingKeys.size() + 1) / 2 + 1)</code> (majority) if unspecified.</p>
+         * <p>Threshold, or {@code (followingKeys.size() + 1) / 2 + 1)} (majority) if unspecified.</p>
          * <p>IMPORTANT: As of Bitcoin Core 0.9 all multisig transactions which require more than 3 public keys are non-standard
          * and such spends won't be processed by peers with default settings, essentially making such transactions almost
          * nonspendable</p>

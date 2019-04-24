@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Monetary;
@@ -149,7 +150,7 @@ public final class MonetaryFormat {
      * </p>
      * 
      * <p>
-     * For example, if you pass <tt>4,2</tt> it will add four decimals to your formatted string if needed, and then add
+     * For example, if you pass {@code 4,2} it will add four decimals to your formatted string if needed, and then add
      * another two decimals if needed. At this point, rather than adding further decimals the value will be rounded.
      * </p>
      * 
@@ -157,7 +158,7 @@ public final class MonetaryFormat {
      *            any number numbers of decimals, one for each group
      */
     public MonetaryFormat optionalDecimals(int... groups) {
-        List<Integer> decimalGroups = new ArrayList<Integer>(groups.length);
+        List<Integer> decimalGroups = new ArrayList<>(groups.length);
         for (int group : groups)
             decimalGroups.add(group);
         return new MonetaryFormat(negativeSign, positiveSign, zeroDigit, decimalMark, minDecimals, decimalGroups,
@@ -172,7 +173,7 @@ public final class MonetaryFormat {
      * </p>
      * 
      * <p>
-     * For example, if you pass <tt>1,8</tt> it will up to eight decimals to your formatted string if needed. After
+     * For example, if you pass {@code 1,8} it will up to eight decimals to your formatted string if needed. After
      * these have been used up, rather than adding further decimals the value will be rounded.
      * </p>
      * 
@@ -183,7 +184,7 @@ public final class MonetaryFormat {
      */
     public MonetaryFormat repeatOptionalDecimals(int decimals, int repetitions) {
         checkArgument(repetitions >= 0);
-        List<Integer> decimalGroups = new ArrayList<Integer>(repetitions);
+        List<Integer> decimalGroups = new ArrayList<>(repetitions);
         for (int i = 0; i < repetitions; i++)
             decimalGroups.add(decimals);
         return new MonetaryFormat(negativeSign, positiveSign, zeroDigit, decimalMark, minDecimals, decimalGroups,
@@ -291,6 +292,10 @@ public final class MonetaryFormat {
     }
 
     public MonetaryFormat() {
+        this(false);
+    }
+
+    public MonetaryFormat(boolean useBitcoinSymbol) {
         // defaults
         this.negativeSign = '-';
         this.positiveSign = 0; // none
@@ -393,7 +398,7 @@ public final class MonetaryFormat {
     }
 
     /**
-     * Parse a human readable coin value to a {@link org.bitcoinj.core.Coin} instance.
+     * Parse a human readable coin value to a {@link Coin} instance.
      * 
      * @throws NumberFormatException
      *             if the string cannot be parsed for some reason
@@ -403,7 +408,7 @@ public final class MonetaryFormat {
     }
 
     /**
-     * Parse a human readable fiat value to a {@link org.bitcoinj.utils.Fiat} instance.
+     * Parse a human readable fiat value to a {@link Fiat} instance.
      * 
      * @throws NumberFormatException
      *             if the string cannot be parsed for some reason
@@ -450,5 +455,46 @@ public final class MonetaryFormat {
         if (codes[shift] == null)
             throw new NumberFormatException("missing code for shift: " + shift);
         return codes[shift];
+    }
+
+    /**
+     * Two formats are equal if they have the same parameters.
+     */
+    @Override
+    public boolean equals(final Object o) {
+        if (o == this)
+            return true;
+        if (o == null || o.getClass() != getClass())
+            return false;
+        final MonetaryFormat other = (MonetaryFormat) o;
+        if (!Objects.equals(this.negativeSign, other.negativeSign))
+            return false;
+        if (!Objects.equals(this.positiveSign, other.positiveSign))
+            return false;
+        if (!Objects.equals(this.zeroDigit, other.zeroDigit))
+            return false;
+        if (!Objects.equals(this.decimalMark, other.decimalMark))
+            return false;
+        if (!Objects.equals(this.minDecimals, other.minDecimals))
+            return false;
+        if (!Objects.equals(this.decimalGroups, other.decimalGroups))
+            return false;
+        if (!Objects.equals(this.shift, other.shift))
+            return false;
+        if (!Objects.equals(this.roundingMode, other.roundingMode))
+            return false;
+        if (!Arrays.equals(this.codes, other.codes))
+            return false;
+        if (!Objects.equals(this.codeSeparator, other.codeSeparator))
+            return false;
+        if (!Objects.equals(this.codePrefixed, other.codePrefixed))
+            return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(negativeSign, positiveSign, zeroDigit, decimalMark, minDecimals, decimalGroups, shift,
+                roundingMode, Arrays.hashCode(codes), codeSeparator, codePrefixed);
     }
 }

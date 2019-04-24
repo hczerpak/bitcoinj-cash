@@ -1,4 +1,6 @@
 /*
+ * Copyright by the original author or authors.
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,11 +23,13 @@ import org.bitcoinj.wallet.Wallet;
 
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.MoreExecutors;
+
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import org.spongycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.KeyParameter;
 import wallettemplate.controls.BitcoinAddressValidator;
 import wallettemplate.utils.TextFieldValidator;
 import wallettemplate.utils.WTUtils;
@@ -86,7 +90,7 @@ public class SendMoneyController {
                     // We died trying to empty the wallet.
                     crashAlert(t);
                 }
-            });
+            }, MoreExecutors.directExecutor());
             sendResult.tx.getConfidence().addEventListener((tx, reason) -> {
                 if (reason == TransactionConfidence.Listener.ChangeReason.SEEN_PEERS)
                     updateTitleForBroadcast();

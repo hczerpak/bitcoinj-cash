@@ -36,7 +36,7 @@ import static org.bitcoinj.core.Sha256Hash.*;
  * It records a set of {@link Transaction}s together with some data that links it into a place in the global block
  * chain, and proves that a difficult calculation was done over its contents. See
  * <a href="http://www.bitcoin.org/bitcoin.pdf">the Bitcoin technical paper</a> for
- * more detail on blocks. <p/>
+ * more detail on blocks.</p>
  *
  * <p>To get a block, you can either build one from the raw bytes you can get from another implementation, or request one
  * specifically using {@link Peer#getBlock(Sha256Hash)}, or grab one from a downloaded {@link BlockChain}.</p>
@@ -97,8 +97,8 @@ public class Block extends Message {
     private long difficultyTarget; // "nBits"
     private long nonce;
 
-    // TODO: Get rid of all the direct accesses to this field. It's a long-since unnecessary holdover from the Dalvik days.
-    /** If null, it means this object holds only the headers. */
+    // If null, it means this object holds only the headers.
+    @VisibleForTesting
     @Nullable List<Transaction> transactions;
 
     /** Stores the hash of the block. If null, getHash() will recalculate it. */
@@ -201,7 +201,7 @@ public class Block extends Message {
         this.time = time;
         this.difficultyTarget = difficultyTarget;
         this.nonce = nonce;
-        this.transactions = new LinkedList<Transaction>();
+        this.transactions = new LinkedList<>();
         this.transactions.addAll(transactions);
     }
 
@@ -212,7 +212,7 @@ public class Block extends Message {
      * the system it was 50 coins per block, in late 2012 it went to 25 coins per block, and so on. The size of
      * a coinbase transaction is inflation plus fees.</p>
      *
-     * <p>The half-life is controlled by {@link org.bitcoinj.core.NetworkParameters#getSubsidyDecreaseBlockCount()}.
+     * <p>The half-life is controlled by {@link NetworkParameters#getSubsidyDecreaseBlockCount()}.
      * </p>
      */
     public Coin getBlockInflation(int height) {

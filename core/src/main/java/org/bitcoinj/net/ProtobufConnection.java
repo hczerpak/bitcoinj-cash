@@ -77,14 +77,14 @@ public class ProtobufConnection<MessageType extends MessageLite> extends Abstrac
     @GuardedBy("lock") private byte[] messageBytes;
     private final ReentrantLock lock = Threading.lock("ProtobufConnection");
 
-    @VisibleForTesting final AtomicReference<MessageWriteTarget> writeTarget = new AtomicReference<MessageWriteTarget>();
+    @VisibleForTesting final AtomicReference<MessageWriteTarget> writeTarget = new AtomicReference<>();
 
     /**
      * Creates a new protobuf handler.
      *
      * @param handler The callback listener
      * @param prototype The default instance of the message type used in both directions of this channel.
-     *                  This should be the return value from {@code MessageType#getDefaultInstanceForType()}
+     *                  This should be the return value from {@link MessageLite#getDefaultInstanceForType()}
      * @param maxMessageSize The maximum message size (not including the 4-byte length prefix).
      *                       Note that this has an upper bound of {@link Integer#MAX_VALUE} - 4
      * @param timeoutMillis The timeout between messages before the connection is automatically closed. Only enabled
@@ -162,7 +162,7 @@ public class ProtobufConnection<MessageType extends MessageLite> extends Abstrac
 
             // If length is larger than the maximum message size (or is negative/overflows) throw an exception and close the
             // connection
-            if (len > maxMessageSize || len + 4 < 4)
+            if (len > maxMessageSize || len < 0)
                 throw new IllegalStateException("Message too large or length underflowed");
 
             // If the buffer's capacity is less than the next messages length + 4 (length prefix), we must use messageBytes

@@ -1,4 +1,6 @@
 /*
+ * Copyright by the original author or authors.
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -66,9 +68,9 @@ public class Context {
      * Creates a new custom context object. This is mainly meant for unit tests for now.
      *
      * @param params The network parameters that will be associated with this context.
-     * @param eventHorizon Number of blocks after which the library will delete data and be unable to always process reorgs (see {@link #getEventHorizon()}.
-     * @param feePerKb The default fee per 1000 bytes of transaction data to pay when completing transactions. For details, see {@link org.bitcoinj.wallet.SendRequest#feePerKb}.
-     * @param ensureMinRequiredFee Whether to ensure the minimum required fee by default when completing transactions. For details, see {@link org.bitcoinj.wallet.SendRequest#ensureMinRequiredFee}.
+     * @param eventHorizon Number of blocks after which the library will delete data and be unable to always process reorgs. See {@link #getEventHorizon()}.
+     * @param feePerKb The default fee per 1000 bytes of transaction data to pay when completing transactions. For details, see {@link SendRequest#feePerKb}.
+     * @param ensureMinRequiredFee Whether to ensure the minimum required fee by default when completing transactions. For details, see {@link SendRequest#ensureMinRequiredFee}.
      */
     public Context(NetworkParameters params, int eventHorizon, Coin feePerKb, boolean ensureMinRequiredFee) {
         this(params);
@@ -79,7 +81,7 @@ public class Context {
 
     private static volatile Context lastConstructed;
     private static boolean isStrictMode;
-    private static final ThreadLocal<Context> slot = new ThreadLocal<Context>();
+    private static final ThreadLocal<Context> slot = new ThreadLocal<>();
 
     /**
      * Returns the current context that is associated with the <b>calling thread</b>. BitcoinJ is an API that has thread
@@ -116,7 +118,7 @@ public class Context {
     }
 
     /**
-     * Require that new threads use {@link #propagate(Context)} or {@link org.bitcoinj.utils.ContextPropagatingThreadFactory},
+     * Require that new threads use {@link #propagate(Context)} or {@link ContextPropagatingThreadFactory},
      * rather than using a heuristic for the desired context.
      */
     public static void enableStrictMode() {
@@ -142,7 +144,7 @@ public class Context {
      * Sets the given context as the current thread context. You should use this if you create your own threads that
      * want to create core BitcoinJ objects. Generally, if a class can accept a Context in its constructor and might
      * be used (even indirectly) by a thread, you will want to call this first. Your task may be simplified by using
-     * a {@link org.bitcoinj.utils.ContextPropagatingThreadFactory}.
+     * a {@link ContextPropagatingThreadFactory}.
      */
     public static void propagate(Context context) {
         slot.set(checkNotNull(context));
@@ -159,7 +161,7 @@ public class Context {
     }
 
     /**
-     * Returns the {@link org.bitcoinj.core.NetworkParameters} specified when this context was (auto) created. The
+     * Returns the {@link NetworkParameters} specified when this context was (auto) created. The
      * network parameters defines various hard coded constants for a specific instance of a Bitcoin network, such as
      * main net, testnet, etc.
      */
@@ -177,14 +179,14 @@ public class Context {
     }
 
     /**
-     * The default fee per 1000 bytes of transaction data to pay when completing transactions. For details, see {@link org.bitcoinj.wallet.SendRequest#feePerKb}.
+     * The default fee per 1000 bytes of transaction data to pay when completing transactions. For details, see {@link SendRequest#feePerKb}.
      */
     public Coin getFeePerKb() {
         return feePerKb;
     }
 
     /**
-     * Whether to ensure the minimum required fee by default when completing transactions. For details, see {@link org.bitcoinj.wallet.SendRequest#ensureMinRequiredFee}.
+     * Whether to ensure the minimum required fee by default when completing transactions. For details, see {@link SendRequest#ensureMinRequiredFee}.
      */
     public boolean isEnsureMinRequiredFee() {
         return ensureMinRequiredFee;

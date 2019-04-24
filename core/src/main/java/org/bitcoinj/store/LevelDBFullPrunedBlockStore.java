@@ -259,9 +259,9 @@ public class LevelDBFullPrunedBlockStore implements FullPrunedBlockStore {
         fullStoreDepth = blockCount;
         this.instrument = instrument;
         this.exitBlock = exitBlock;
-        methodStartTime = new HashMap<String, Stopwatch>();
-        methodCalls = new HashMap<String, Long>();
-        methodTotalTime = new HashMap<String, Long>();
+        methodStartTime = new HashMap<>();
+        methodCalls = new HashMap<>();
+        methodTotalTime = new HashMap<>();
 
         this.filename = filename;
         this.leveldbReadCache = leveldbReadCache;
@@ -314,7 +314,7 @@ public class LevelDBFullPrunedBlockStore implements FullPrunedBlockStore {
         this.verifiedChainHeadBlock = get(hash);
         this.verifiedChainHeadHash = hash;
         if (this.verifiedChainHeadBlock == null) {
-            throw new BlockStoreException("corrupt databse block store - verified head block not found");
+            throw new BlockStoreException("corrupt database block store - verified head block not found");
         }
     }
 
@@ -1039,10 +1039,10 @@ public class LevelDBFullPrunedBlockStore implements FullPrunedBlockStore {
             beginMethod("beginDatabaseBatchWrite");
 
         batch = db.createWriteBatch();
-        uncommited = new HashMap<ByteBuffer, byte[]>();
-        uncommitedDeletes = new HashSet<ByteBuffer>();
-        utxoUncommittedCache = new HashMap<ByteBuffer, UTXO>();
-        utxoUncommittedDeletedCache = new HashSet<ByteBuffer>();
+        uncommited = new HashMap<>();
+        uncommitedDeletes = new HashSet<>();
+        utxoUncommittedCache = new HashMap<>();
+        utxoUncommittedDeletedCache = new HashSet<>();
         autoCommit = false;
         if (instrument)
             endMethod("beginDatabaseBatchWrite");

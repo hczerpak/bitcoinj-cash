@@ -66,7 +66,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.KeyParameter;
 
 import java.io.File;
 import java.math.BigInteger;
@@ -495,7 +495,7 @@ public class WalletTest extends TestWithWallet {
 
     @Test
     public void sideChain() throws Exception {
-        // The wallet receives a coin on the main chain, then on a side chain. Balance is equal to both added together
+        // The wallet receives a coin on the best chain, then on a side chain. Balance is equal to both added together
         // as we assume the side chain tx is pending and will be included shortly.
         Coin v1 = COIN;
         sendMoneyToWallet(AbstractBlockChain.NewBlockType.BEST_CHAIN, v1);
@@ -1399,7 +1399,7 @@ public class WalletTest extends TestWithWallet {
 
     @Test
     public void pending3() throws Exception {
-        // Check that if we receive a pending tx, and it's overridden by a double spend from the main chain, we
+        // Check that if we receive a pending tx, and it's overridden by a double spend from the best chain, we
         // are notified that it's dead. This should work even if the pending tx inputs are NOT ours, ie, they don't
         // connect to anything.
         Coin nanos = COIN;
@@ -1443,7 +1443,7 @@ public class WalletTest extends TestWithWallet {
         Threading.waitForUserCode();
         assertEquals(t1, called[0]);
         assertEquals(nanos, wallet.getBalance(Wallet.BalanceType.ESTIMATED));
-        // Now receive a double spend on the main chain.
+        // Now receive a double spend on the best chain.
         called[0] = called[1] = null;
         sendMoneyToWallet(AbstractBlockChain.NewBlockType.BEST_CHAIN, t2);
         Threading.waitForUserCode();
@@ -1464,7 +1464,7 @@ public class WalletTest extends TestWithWallet {
         assertEquals(tx2, transactions.get(0));
         assertEquals(tx1, transactions.get(1));
         assertEquals(2, transactions.size());
-        // Check we get only the last transaction if we request a subrage.
+        // Check we get only the last transaction if we request a subrange.
         transactions = wallet.getRecentTransactions(1, false);
         assertEquals(1, transactions.size());
         assertEquals(tx2,  transactions.get(0));
