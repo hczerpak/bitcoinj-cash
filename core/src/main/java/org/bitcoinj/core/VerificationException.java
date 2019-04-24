@@ -75,6 +75,16 @@ public class VerificationException extends RuntimeException {
         }
     }
 
+    public static class SignatureFormatError extends VerificationException {
+        public SignatureFormatError(String msg) {
+            super(msg);
+        }
+
+        public SignatureFormatError(Exception e) {
+            super(e);
+        }
+    }
+
     public static class UnexpectedCoinbaseInput extends VerificationException {
         public UnexpectedCoinbaseInput() {
             super("Coinbase input as input in non-coinbase transaction");

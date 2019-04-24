@@ -969,6 +969,13 @@ public class Transaction extends ChildMessage {
         return addOutput(new TransactionOutput(params, this, value, script.getProgram()));
     }
 
+    /**
+     * Creates an output with OP_RETURN data.
+     */
+    public TransactionOutput addData(byte[] data) {
+        Script script = ScriptBuilder.createOpReturnScript(data);
+        return addOutput(new TransactionOutput(params, this, Coin.ZERO, script.getProgram()));
+    }
 
     /**
      * Calculates a signature that is valid for being inserted into the input at the given position. This is simply

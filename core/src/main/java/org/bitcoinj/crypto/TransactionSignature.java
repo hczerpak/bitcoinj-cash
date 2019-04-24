@@ -90,6 +90,21 @@ public class TransactionSignature extends ECKey.ECDSASignature {
     }
 
     /**
+     * Checkes if the Hashtype is properly set in the signature.
+     * (from bicopinj-cash)
+     *
+     * @param signature Signature
+     * @return          True (correct Hashtype)/ False
+     */
+    public static boolean isValidHashType(byte[] signature) {
+        boolean result = true;
+        int hashType = (signature[signature.length-1] & 0xff) & ~(Transaction.SigHash.ANYONECANPAY.value| SigHash.FORKID.value); // mask the byte to prevent sign-extension hurting us
+        if (hashType < Transaction.SigHash.ALL.value || hashType > Transaction.SigHash.SINGLE.value)
+            result = false;
+        return result;
+    }
+
+    /**
      * Returns true if the given signature is has canonical encoding, and will thus be accepted as standard by
      * Bitcoin Core. DER and the SIGHASH encoding allow for quite some flexibility in how the same structures
      * are encoded, and this can open up novel attacks in which a man in the middle takes a transaction and then

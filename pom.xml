@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
   <groupId>cash.bitcoinj</groupId>
-  <artifactId>bitcoinj-parent</artifactId>
+  <artifactId>bitcoinj-cash-parent</artifactId>
   <version>0.14-SNAPSHOT</version>
   <packaging>pom</packaging>
 
@@ -21,14 +21,14 @@
     </parent>
 
     <scm>
-        <connection>scm:git:https://github.com/bitcoinj-cash/bitcoinj</connection>
-        <developerConnection>scm:https://github.com/bitcoinj-cash/bitcoinj</developerConnection>
-        <url>scm:git:https://github.com/bitcoinj-cash/bitcoinj</url>
+        <connection>scm:git:https://github.com/ProtocolCash/bitcoinj-cash</connection>
+        <developerConnection>scm:https://github.com/ProtocolCash/bitcoinj-cash</developerConnection>
+        <url>scm:git:https://github.com/ProtocolCash/bitcoinj-cash</url>
     </scm>
 
     <name>bitcoinj Parent</name>
-    <description>Provides the common configuration for the BitCoinJ modules</description>
-    <url>http://bitcoinj.cash/</url>
+    <description>Provides the common configuration for the BitCoinJ-Cash modules</description>
+    <url>https://github.com/ProtocolCash/bitcoinj-cash</url>
 
     <licenses>
         <license>
@@ -41,15 +41,8 @@
 
     <issueManagement>
         <system>GitHub</system>
-        <url>https://github.com/bitcoinj-cash/bitcoinj/issues</url>
+        <url>https://github.com/ProtocolCash/bitcoinj-cash/issues</url>
     </issueManagement>
-
-    <mailingLists>
-        <mailingList>
-            <name>bitcoinj.cash Google Group</name>
-            <post>https://groups.google.com/forum/#!forum/bitcoinj-cash</post>
-        </mailingList>
-    </mailingLists>
 
     <prerequisites>
         <maven>3.0.4</maven>
