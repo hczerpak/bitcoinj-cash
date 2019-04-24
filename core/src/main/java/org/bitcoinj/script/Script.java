@@ -23,6 +23,7 @@
 package org.bitcoinj.script;
 
 import org.bitcoinj.core.*;
+import org.bitcoinj.core.VerificationException.*;
 import org.bitcoinj.crypto.TransactionSignature;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
@@ -79,6 +80,8 @@ public class Script {
         MINIMALDATA, // Require minimal encodings for all push operations and number encodings
         DISCOURAGE_UPGRADABLE_NOPS, // Discourage use of NOPs reserved for upgrades (NOP1-10)
         CLEANSTACK, // Require that only a single stack element remains after evaluation.
+        NULLFAIL,
+        SIGHASH_FORKID,
         CHECKLOCKTIMEVERIFY, // Enable CHECKLOCKTIMEVERIFY operation
         ENABLESIGHASHFORKID,
         MONOLITH_OPCODES // May 15, 2018 Hard fork
@@ -1732,6 +1735,43 @@ public class Script {
         // TODO: Use int for indexes everywhere, we can't have that many inputs/outputs
         boolean sigValid = false;
         try {
+            // We check the signature format (an empty signature is still a "valid" signature from a structure perspective...
+            if (sigBytes.length > 0) {
+                // We check the signature Encoding - in case of failed verification, and Exception is thrown
+                checkSignatureEncoding(sigBytes, verifyFlags);
+
+                // We check the Public Key encoding and compression - In case of failed verification, and Exception is thrown
+                checkPubKeyEncoding(pubKey, verifyFlags);
+
+                // Signature is well-structured...
+                TransactionSignature sig = TransactionSignature.decodeFromBitcoin(sigBytes, requireCanonical,
+                        verifyFlags.contains(VerifyFlag.LOW_S));
+
+                // TODO: Should check hash type is known
+                Sha256Hash hash = sig.useForkId() ?
+                        txContainingThis.hashForSignatureWitness(index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay()) :
+                        txContainingThis.hashForSignature(index, connectedScript, (byte) sig.sighashFlags);
+
+                sigValid = ECKey.verify(hash.getBytes(), sig, pubKey);
+
+            }
+        } catch (SignatureFormatError e) {
+            sigValid = false;
+        }
+
+        // NULLFAIL Verification:
+        // If the NULLFAIL flag is active and the result of the Signature Verification is FALSE, we check
+        // that the signature is an empty Array...
+        if (!sigValid && verifyFlags.contains(VerifyFlag.NULLFAIL) && sigBytes.length > 0)
+            throw new ScriptException("NULLFAIL-compliant");
+
+        if (opcode == OP_CHECKSIG)
+            stack.add(sigValid ? new byte[] {1} : new byte[] {});
+        else if (opcode == OP_CHECKSIGVERIFY)
+            if (!sigValid)
+                throw new ScriptException("Script failed OP_CHECKSIGVERIFY");
+
+        try {
             TransactionSignature sig  = TransactionSignature.decodeFromBitcoin(sigBytes, requireCanonical,
                 verifyFlags.contains(VerifyFlag.LOW_S));
 
@@ -1756,6 +1796,110 @@ public class Script {
             if (!sigValid)
                 throw new ScriptException("Script failed OP_CHECKSIGVERIFY");
     }
+
+    /**
+     * Checks the Public Key encoding
+     * (bitcoin-abc implementation as a reference)
+     *
+     * @param sigBytes              signature
+     * @param flags                 verification flags
+     * @throws ScriptException      Exception
+     */
+    private static void checkPubKeyEncoding(byte[] sigBytes, Set<VerifyFlag> flags) throws ScriptException {
+
+        if ((flags.contains(VerifyFlag.STRICTENC))
+                && !ECKey.isPubKeyCanonical(sigBytes))
+            throw new ScriptException("Public Key not properly encoded");
+    }
+
+    /**
+     * Checks if the public key given is properly compressed.
+     *
+     * @param sigBytes      Signature
+     * @return              true (properly compressed) / False
+     */
+    private static boolean IsCompressedPubKey(byte[] sigBytes) {
+        //  Non-canonical public key: invalid length for compressed key
+        if (sigBytes.length != 33) return false;
+
+        //  Non-canonical public key: invalid prefix for compressed key
+        if (sigBytes[0] != 0x02 && sigBytes[0] != 0x03) return false;
+
+        return true;
+    }
+
+    /**
+     * checks whether the encoded signature looks to be validly encoded, depending on the flags supplied.
+     * NOTE: this method has been changed, from returning a boolean to returning void and throwing a more
+     * specific exception depending on the cause of the problem.
+     *
+     * Following the implementation from bitcoin-abc, the SignatureEncoding Verification can now fail due to
+     * different factors, and we need info about which ones has explicity failed. so instead of returning a
+     * boolean (which is not specific enough), we throw a more specific exception in case of failure.
+     *
+     * @throws              Exception in case signature is not valid
+     */
+    private static void checkSignatureEncoding(byte[] sigBytes, Set<VerifyFlag> flags) throws SignatureFormatError {
+
+        // NOTE:
+        // When the "STRICTENC" flag is active, we need to check if the Signature encoding is right, and
+        // different errors might be thrown: SIG_DER, SIG_HASHTYPE and FORID.
+        //  - SIG_DER: The signature is not DER-encoded
+        //  - SIGHASH_TYPE: The SIGHASH (last byte in the signature) is wrong.
+        //  - FORKID:
+
+        boolean derEncodingOK = true;
+        boolean sighashTypeOK = true;
+        boolean forkIdOK = true;
+        String errMsg = null;
+
+        // If the flags specify STRICTENC, DERSIG or LOW_S, we check if the Signature is CANONICAL...
+        if ((flags.contains(VerifyFlag.STRICTENC)
+                || flags.contains(VerifyFlag.DERSIG)
+                || flags.contains(VerifyFlag.LOW_S))
+                && !TransactionSignature.isEncodingCanonical(sigBytes)) {
+            derEncodingOK = false;
+            errMsg = "Signature not in DER Format";
+        }
+
+
+        if (derEncodingOK) {
+            // We check Low DER Signature...
+            if (flags.contains(VerifyFlag.LOW_S)) checkLowDERSignature(sigBytes);
+
+            // We check the HASHTYPE and the FORKID...
+            if (flags.contains(VerifyFlag.STRICTENC)) {
+                // Checking hashtype...
+                if (!TransactionSignature.isValidHashType(sigBytes))
+                    throw new ScriptException("Hashtype not correct in Signature");
+
+                // checking forkIdEnabled...
+                boolean usesForkId = TransactionSignature.hasForkId(sigBytes);
+                boolean forIkEnabled = flags.contains(VerifyFlag.SIGHASH_FORKID);
+                if (!forIkEnabled && usesForkId) {
+                    forkIdOK = false;
+                    errMsg = "FORKID verification disabled, but FORKId found in the Signature";
+                }
+                if (forIkEnabled && !usesForkId) {
+                    forkIdOK = false;
+                    errMsg = "FORKID verification enabled, but no FORKId found in the Signature";
+                }
+            }
+        }
+
+
+        // Now we trigger the error. In case more than one error has been detected, we trigger only one of them. The
+        // priority in this case does not affect the outcome of the Script (ScriptException in any case).
+
+        if (!sighashTypeOK)
+        if (!forkIdOK) throw new ScriptException(errMsg);
+        if (!derEncodingOK) throw new ScriptException(errMsg);
+
+        // If we reach this far, Signature is OK...
+    }
+
+    // TODO: Implementation pending...
+    private static void checkLowDERSignature(byte[] sigBytes) throws SignatureFormatError {}
 
     private static int executeMultiSig(Transaction txContainingThis, int index, Script script, LinkedList<byte[]> stack,
                                        int opCount, int lastCodeSepLocation, int opcode, Coin value,
@@ -1886,7 +2030,16 @@ public class Script {
         }
         if (getProgram().length > 10000 || scriptPubKey.getProgram().length > 10000)
             throw new ScriptException("Script larger than 10,000 bytes");
-        
+
+        // In case FORKID is enabled, then we also force the STRICTENC flag
+        if (verifyFlags.contains(VerifyFlag.SIGHASH_FORKID))
+            verifyFlags.add(VerifyFlag.STRICTENC);
+
+        // In case the "SIGPUSHONLY" flag is enmabled, we check that the script is composed of ONLY
+        // PUSH operations...
+        if (verifyFlags.contains(VerifyFlag.SIGPUSHONLY) && (!this.isPushOnly()))
+            throw new ScriptException("Attempted to spend a P2SH scriptPubKey with a script that contained script ops");
+
         LinkedList<byte[]> stack = new LinkedList<byte[]>();
         LinkedList<byte[]> p2shStack = null;
         
@@ -1929,6 +2082,9 @@ public class Script {
             
             if (!castToBool(p2shStack.pollLast()))
                 throw new ScriptException("P2SH script execution resulted in a non-true stack");
+
+            // We restore the Stack with the result of the p2shStack after executing the redeem script...
+            stack = p2shStack;
         }
 
         // The CLEANSTACK check is only performed after potential P2SH evaluation,
@@ -1937,6 +2093,27 @@ public class Script {
         if (verifyFlags.contains(VerifyFlag.CLEANSTACK) && verifyFlags.contains(VerifyFlag.P2SH))
             if (stack.size() != 1)
                 throw new ScriptException("CleanStack check failed. Stack size is not 1.");
+    }
+
+    /**
+     * Indicates if this script is made up of only PUSH operations
+     * @return  true (ony PUSH) / False
+     */
+    public boolean isPushOnly() {
+        boolean result = true;
+        Iterator<ScriptChunk> it = chunks.iterator();
+
+        while (result && it.hasNext()) {
+            int opCode = it.next().opcode;
+            // Note that IsPushOnly() *does* consider OP_RESERVED to be a push-type
+            // opcode, however execution of OP_RESERVED fails, so it's not relevant
+            // to P2SH/BIP62 as the scriptSig would fail prior to the P2SH special
+            // validation code being executed.
+            if (opCode > ScriptOpCodes.OP_16)
+                result = false;
+        }
+
+        return result;
     }
 
     // Utility that doesn't copy for internal use
