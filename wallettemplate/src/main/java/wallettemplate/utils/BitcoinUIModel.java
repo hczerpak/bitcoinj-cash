@@ -14,11 +14,11 @@
 
 package wallettemplate.utils;
 
-import org.bitcoinj.core.listeners.DownloadProgressTracker;
-import org.bitcoinj.wallet.Wallet;
-import org.bitcoinj.wallet.listeners.AbstractWalletEventListener;
-import org.bitcoinj.wallet.listeners.WalletChangeEventListener;
-import org.bitcoinj.core.*;
+import cash.bitcoinj.core.listeners.DownloadProgressTracker;
+import cash.bitcoinj.wallet.Wallet;
+import cash.bitcoinj.wallet.listeners.AbstractWalletEventListener;
+import cash.bitcoinj.wallet.listeners.WalletChangeEventListener;
+import cash.bitcoinj.core.*;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
